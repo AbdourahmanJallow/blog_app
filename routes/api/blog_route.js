@@ -5,21 +5,13 @@ const {
     updateBlog,
     deleteBlog,
     getAllBlogs,
-    getBlog,
-    search
+    getBlog
 } = require('../../controllers/blog');
 const { verifyRoles } = require('../../middleware/verifyRoles');
 const { ROLES_LIST } = require('../../config/rolesList');
 
-router
-    .route('/')
-    .get(getAllBlogs)
-    .post(createNewBlog)
-    .put(updateBlog)
-    .delete(deleteBlog);
+router.route('/').get(getAllBlogs).post(createNewBlog);
 
-router.route('/:id').get(getBlog);
-
-router.route('/search').get(search);
+router.route('/:id').get(getBlog).put(updateBlog).delete(deleteBlog);
 
 module.exports = router;

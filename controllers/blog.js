@@ -1,142 +1,84 @@
 const { StatusCodes } = require('http-status-codes');
 const Blog = require('../models/Blog');
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
+const asyncHandler = require('../middleware/async');
+const ErrorResponse = require('../utils/errorHandler');
 
-const createNewBlog = async (req, res) => {
-    const { title, content, tags, category } = req?.body;
-    if (!title || !content || !tags || !category)
-        return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ message: 'Invalid title, content, tags or category.' });
+// @description     Create a new blog
+// routes           POST api/v1/blogs
+// @access          public
+const createNewBlog = asyncHandler(async (req, res, next) => {
+    const blog = await Blog.create(req.body);
 
-    const loggedInUserId = req.userID;
-    try {
-        const newBlog = await Blog.create({
-            title,
-            content,
-            author: loggedInUserId,
-            category,
-            tags
-        });
-
-        res.status(StatusCodes.CREATED).json({ newBlog });
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
-        console.log(error);
+    if (!blog) {
+        return next(new ErrorResponse(`Failed to create new blog.`, 400));
     }
-};
 
-const updateBlog = async (req, res) => {
-    const { blog_id } = req?.body;
-    if (!blog_id)
-        return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ message: 'Blog ID is required :)' });
+    res.status(201).json({ success: true, data: blog });
+});
 
-    const blog = await Blog.findOne({ _id: blog_id }).exec();
-    if (!blog) return res.status(StatusCodes.NO_CONTENT);
+// @description     Get a blog
+// routes           GET api/v1/blogs/:id
+// @access          public
+const getBlog = asyncHandler(async (req, res, next) => {
+    const blog = await Blog.findById(req.params.id).exec();
 
-    try {
-        if (req?.body?.title) blog.title = req?.body?.title;
-        if (req?.body?.content) blog.content = req?.body?.content;
-        if (req?.body?.category) blog.category = req?.body?.category;
-        if (req?.body?.tags) blog.tags = req?.body?.tags;
-
-        const result = await blog.save();
-
-        res.status(StatusCodes.OK).json({ result });
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
-        console.log(error);
+    if (!blog) {
+        return next(
+            new ErrorResponse(`Blog with id ${req.params.is} not found.`, 404)
+        );
     }
-};
 
-const deleteBlog = async (req, res) => {
-    const { blog_id } = req?.body;
-    if (!blog_id)
-        return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ message: 'Invalid blog ID' });
+    res.status(200).json({ success: true, data: blog });
+});
 
-    const blog = await Blog.findOne({ _id: blog_id }).exec();
+// @description     Get all blog
+// routes           GET api/v1/blogs
+// @access          public
+const getAllBlogs = asyncHandler(async (req, res, next) => {
+    const blogs = await Blog.find();
+
+    res.status(200).json({ success: true, data: blogs });
+});
+
+// @description     Update a new blog
+// routes           PUT api/v1/blogs/:id
+// @access          private
+const updateBlog = asyncHandler(async (req, res, next) => {
+    const blog = await Blog.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true
+    });
+
     if (!blog)
-        return res
-            .status(StatusCodes.NO_CONTENT)
-            .json({ message: 'Blog not found' });
+        return next(
+            new ErrorResponse(`Blog with id ${req.params.id} not found.`, 404)
+        );
 
-    try {
-        const result = await Blog.deleteOne({ _id: blog_id }).exec();
-        console.log(result);
-        res.json({ result });
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
-        console.log(error);
-    }
-};
+    res.status(200).json({ success: true, data: blog });
+});
 
-const getBlog = async (req, res) => {
-    if (!req.params.id)
-        return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ message: 'No blog id provided' });
+// @description     Delete blog
+// routes           DELETE api/v1/blogs/:id
+// @access          private
+const deleteBlog = asyncHandler(async (req, res, next) => {
+    const blog = await Blog.findByIdAndDelete(req.params.id, req.body, {
+        new: true,
+        runValidators: true
+    });
 
-    // const blog_id = req?.params?.id;
-    const blog = await Blog.findOne({ _id: req?.params?.id }).exec();
-    try {
-        if (!blog)
-            return res
-                .status(StatusCodes.NO_CONTENT)
-                .json({ message: 'No blog found' });
+    if (!blog)
+        return next(
+            new ErrorResponse(`Blog with id ${req.params.id} not found.`, 404)
+        );
 
-        res.status(StatusCodes.OK).json({ blog });
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
-        console.log(error);
-    }
-};
-
-const getAllBlogs = async (req, res) => {
-    try {
-        const blogs = await Blog.find();
-        if (!blogs)
-            return res
-                .status(StatusCodes.NO_CONTENT)
-                .json({ message: 'No blogs found' });
-
-        res.status(StatusCodes.OK).json({ blogs });
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
-        console.log(error);
-    }
-};
-
-const search = async (req, res) => {
-    const searchTerm = req.query.q;
-    if (!searchTerm)
-        return res
-            .status(StatusCodes.BAD_REQUEST)
-            .json({ message: 'Invalid search term' });
-
-    try {
-        const blogs = await Blog.find({ $text: { $search: searchTerm } });
-
-        if (!blogs)
-            return res
-                .status(StatusCodes.NO_CONTENT)
-                .json({ message: 'No blogs found' });
-
-        res.status(StatusCodes.OK).json({ blogs });
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
-    }
-};
+    res.status(200).json({ success: true, data: {} });
+});
 
 module.exports = {
     createNewBlog,
     updateBlog,
     deleteBlog,
     getAllBlogs,
-    getBlog,
-    search
+    getBlog
 };

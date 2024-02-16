@@ -2,7 +2,7 @@
 
     npm run dev
 
-### Blog App | Backend
+### Blog App | REST API
 
 ### Technologies Used
 
@@ -16,7 +16,7 @@
 
 1. User authentication
 
-### Blog model & routes
+### Blog model & blog routes
 
 1. Define blog schema
     - include fields like title, content, blog_photo, author(current loggedIn user)
