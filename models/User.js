@@ -51,16 +51,6 @@ userSchema.methods.generateAccessToken = function () {
     );
 };
 
-// userSchema.methods.createRefreshToken = function () {
-//     return jwt.sign(
-//         {
-//             email: this.email
-//         },
-//         process.env.REFRESH_TOKEN_SECRET,
-//         { expiresIn: '2d' }
-//     );
-// };
-
 userSchema.methods.comparePassword = async function (password) {
     const matchedUser = await bcrypt.compare(password, this.password); // compare passwords
     return matchedUser;

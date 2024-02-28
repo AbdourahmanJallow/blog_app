@@ -2,6 +2,17 @@ const User = require('../models/User');
 const asyncHandler = require('../middleware/async');
 const ErrorResponse = require('../utils/errorHandler');
 
+// @description     Get Current logged-in User
+// routes           GET api/v1/auth/me
+// @access          private
+const getMe = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    res.status(200).json({ success: true, data: user });
+});
+
+// @description     Register User
+// routes           POST api/v1/auth/register
+// @access          public
 const register = asyncHandler(async (req, res) => {
     const { name, email, password, role } = req.body;
 
@@ -12,6 +23,9 @@ const register = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, token });
 });
 
+// @description     Login
+// routes           POST api/v1/auth/login
+// @access          public
 const login = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
@@ -33,6 +47,9 @@ const login = asyncHandler(async (req, res) => {
     sendResponseToken(user, 200, res);
 });
 
+// @description     Logout
+// routes           GET api/v1/auth/logout
+// @access          private
 const logout = asyncHandler(async (req, res) => {
     const user = await User.findOne(req.cookies.token).exec();
     if (!user) {
@@ -78,6 +95,24 @@ const logout = asyncHandler(async (req, res) => {
 //     );
 // });
 
+// @description     Update User Details
+// routes           PUT api/v1/auth/updatedetails
+// @access          private
+const updateUser = asyncHandler(async (req, res) => {
+    // User cannot update their password here
+    const fieldsToUpdate = {
+        name: req.body.name,
+        email: req.body.email
+    };
+
+    const user = await User.findByIdAndUpdate(req.user._id, fieldsToUpdate, {
+        new: true,
+        runValidators: true
+    });
+
+    res.status(200).json({ success: true, user });
+});
+
 const sendResponseToken = (user, statusCode, res) => {
     const token = user.generateAccessToken();
 
@@ -96,6 +131,8 @@ const sendResponseToken = (user, statusCode, res) => {
 module.exports = {
     login,
     register,
-    logout
+    logout,
+    getMe,
+    updateUser
     // refreshToken
 };

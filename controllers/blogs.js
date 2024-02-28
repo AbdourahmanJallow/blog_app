@@ -3,18 +3,11 @@ const asyncHandler = require('../middleware/async');
 const ErrorResponse = require('../utils/errorHandler');
 const path = require('path');
 
-// @description     Create a new blog
-// routes           POST api/v1/blogs
+// @description     Get all blogs
+// routes           GET api/v1/blogs
 // @access          public
-const createBlog = asyncHandler(async (req, res, next) => {
-    req.body.author = req.user._id;
-    const blog = await Blog.create(req.body);
-
-    if (!blog) {
-        return next(new ErrorResponse(`Failed to create new blog.`, 400));
-    }
-
-    res.status(201).json({ success: true, data: blog });
+const getAllBlogs = asyncHandler(async (req, res, next) => {
+    res.status(200).json(res.advancedResults);
 });
 
 // @description     Get a blog
@@ -32,11 +25,18 @@ const getBlog = asyncHandler(async (req, res, next) => {
     res.status(200).json({ success: true, data: blog });
 });
 
-// @description     Get all blogs
-// routes           GET api/v1/blogs
+// @description     Create a new blog
+// routes           POST api/v1/blogs
 // @access          public
-const getAllBlogs = asyncHandler(async (req, res, next) => {
-    res.status(200).json(res.advancedResults);
+const createBlog = asyncHandler(async (req, res, next) => {
+    req.body.author = req.user._id;
+    const blog = await Blog.create(req.body);
+
+    if (!blog) {
+        return next(new ErrorResponse(`Failed to create new blog.`, 400));
+    }
+
+    res.status(201).json({ success: true, data: blog });
 });
 
 // @description     Update a new blog

@@ -20,9 +20,11 @@ router
 router
     .route('/:id')
     .get(getBlog)
-    .put(protect, authorize('admin'), updateBlog)
-    .delete(protect, authorize('admin'), deleteBlog);
+    .put(protect, authorize('admin', 'user'), updateBlog)
+    .delete(protect, authorize('admin', 'user'), deleteBlog);
 
 // Uplaod blog image
-router.route('/:id/photo').put(protect, authorize('admin'), uploadBlogImage);
+router
+    .route('/:id/photo')
+    .put(protect, authorize('admin', 'user'), uploadBlogImage);
 module.exports = router;
