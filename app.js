@@ -1,20 +1,24 @@
 require('dotenv').config();
+require('colors');
 
 const express = require('express');
 const cors = require('cors');
 const corsOptions = require('./config/corsOptions');
 const cookieParser = require('cookie-parser');
-const colors = require('colors');
-
+const fileUpload = require('express-fileupload');
 const mongoose = require('mongoose');
 const connectDB = require('./config/dbConnection');
-const verifyJWT = require('./middleware/verifyJWT');
+const path = require('path');
 const PORT = process.env.PORT || 8700;
 
-const blog = require('./routes/api/blog_route');
 // Middleware
 const errorHandler = require('./middleware/error');
 
+const blogs = require('./routes/blogs');
+const users = require('./routes/users');
+const auth = require('./routes/auth');
+
+// Database connection
 connectDB();
 
 const app = express();
@@ -25,15 +29,15 @@ app.use(express.urlencoded({ extended: false })); // MIDDLEWARE  FOR URL ENCODED
 app.use(express.json()); // MIDDLEWARE FOR BUILT-IN JSON
 app.use(cookieParser()); // MIDDLEWARE FOR COOKIES
 
-// Routes
-// app.use('/blogapi/register', require('./routes/register'));
-// app.use('/blogapi/login', require('./routes/login'));
-// app.use('/blogapi/logout', require('./routes/logout'));
-// app.use('/blogapi/refresh', require('./routes/refresh'));
+// Serve static fiels
+app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use(verifyJWT);
-app.use('/api/v1/blog', blog);
-// app.use('/blogapi/users', require('./routes/api/users_route'));
+// File uplaoad
+app.use(fileUpload());
+
+app.use('/api/v1/blogs', blogs);
+app.use('/api/v1/auth/users', users); // Admin route
+app.use('/api/v1/auth', auth); // Authentication route
 
 app.use(errorHandler);
 

@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const Comment = require('./Comment');
+const { default: slugify } = require('slugify');
 const { Schema } = mongoose;
 const { ObjectId } = mongoose.Schema.Types;
 
@@ -13,11 +15,11 @@ const blogSchema = new Schema({
         required: [true, 'Please provide blog content.'],
         maxlength: [500, 'Content cannot exceed 500 characters.']
     },
-    // author: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'User',
-    //     required: [true, 'Please provide blog owner.']
-    // },
+    author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'Please provide blog author.']
+    },
     category: {
         type: [String],
         required: [true, 'Please provide blog categorie(s).'],
@@ -28,7 +30,8 @@ const blogSchema = new Schema({
             'Business & Entrepreneurship',
             'Travel',
             'Health & Fitness',
-            'Education'
+            'Education',
+            'Fashion'
         ]
     },
     slug: String,
@@ -36,6 +39,10 @@ const blogSchema = new Schema({
         type: String,
         default: 'no-featured-image.jpg'
     },
+    // comments: {
+    //     type: [mongoose.SchemaTypes.ObjectId],
+    //     ref: 'Blog'
+    // },
     tags: [String],
     createdAt: {
         type: Date,
@@ -44,4 +51,10 @@ const blogSchema = new Schema({
     // lastUpdatedAt: { type: Date, default: Date.now}
 });
 
+// Save slug information
+blogSchema.pre('save', function (next) {
+    this.slug = slugify(this.title, { lower: true });
+
+    next();
+});
 module.exports = mongoose.model('Blog', blogSchema);

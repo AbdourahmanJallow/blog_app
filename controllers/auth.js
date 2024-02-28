@@ -1,154 +1,101 @@
 const User = require('../models/User');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { StatusCodes } = require('http-status-codes');
-const {
-    CustomAPIError,
-    BadRequestError,
-    NotFoundError,
-    UnauthenticatedError
-} = require('../errors/index');
+const asyncHandler = require('../middleware/async');
+const ErrorResponse = require('../utils/errorHandler');
 
-const handleRegister = async (req, res) => {
-    const { username, password, email } = req.body;
+const register = asyncHandler(async (req, res) => {
+    const { name, email, password, role } = req.body;
 
-    if (!username || !password || !email)
-        return res.status(400).json({
-            message: 'Invalid username, email or password.'
-        });
+    const user = await User.create({ name, email, password, role });
 
-    // check for duplicate
-    const duplicate = await User.findOne({ username }).exec();
-    if (duplicate)
-        return res.status(409).json({
-            message: 'Duplicate username, please provide another username'
-        });
+    const token = user.generateAccessToken();
 
-    try {
-        // encrypt password
-        const hashedPwd = await bcrypt.hash(password, 10);
-        const user = await User.create({
-            username,
-            email,
-            password: hashedPwd
-        });
+    res.status(200).json({ success: true, token });
+});
 
-        res.status(201).json({ user });
-    } catch (err) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ err });
-        console.log(err);
-    }
-};
+const login = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
 
-const handleLogin = async (req, res) => {
-    const { password, email } = req.body;
-
-    if (!password || !email)
-        return new BadRequestError('Invalid email or password.');
-
-    const user = await User.findOne({ email }).exec();
-    if (!user)
-        return res
-            .status(StatusCodes.CONFLICT)
-            .json({ message: 'No user found' });
-
-    const matchedUser = await bcrypt.compare(password, user.password);
-
-    if (!matchedUser)
-        return res.status(409).json({ message: 'Password mismatch' });
-
-    try {
-        const accessToken = user.createAccessToken();
-        const refreshToken = user.createRefreshToken();
-
-        user.refreshToken = refreshToken;
-        const result = await user.save();
-        console.log(result);
-
-        res.cookie('jwt', refreshToken, {
-            httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000
-        });
-
-        res.json({ accessToken });
-    } catch (err) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ err });
-        console.log(err);
-    }
-};
-
-const handleLogout = async (req, res) => {
-    const cookies = req?.cookies;
-    if (!cookies.jwt) return res.sendStatus(StatusCodes.NO_CONTENT);
-
-    const refreshToken = cookies?.jwt;
-
-    try {
-        const user = await User.findOne({ refreshToken }).exec();
-        if (!user) {
-            res.clearCookie('jwt', {
-                httpOnly: true
-            });
-
-            res.sendStatus(StatusCodes.NO_CONTENT);
-        }
-
-        user.refreshToken = '';
-        const result = await user.save();
-        console.log(result);
-
-        res.clearCookie('jwt', { httpOnly: true });
-        // res.sendStatus(StatusCodes.NO_CONTENT);
-        res.json({ message: `${user.username} logout successfull` });
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
-        console.log(error);
-    }
-};
-
-const handleRefreshToken = async (req, res) => {
-    const cookies = req?.cookies;
-    if (!cookies.jwt) return res.sendStatus(StatusCodes.UNAUTHORIZED);
-
-    const refreshToken = cookies.jwt;
-
-    try {
-        const user = await User.findOne({ refreshToken });
-        if (!user) return res.sendStatus(StatusCodes.FORBIDDEN);
-
-        const userRoles = Object.values(user.roles);
-
-        jwt.verify(
-            refreshToken,
-            process.env.REFRESH_TOKEN_SECRET,
-            (err, payload) => {
-                if (err || payload.email !== user.email)
-                    return res.sendStatus(StatusCodes.FORBIDDEN);
-
-                const accessToken = jwt.sign(
-                    {
-                        userInfo: {
-                            userID: payload.userID,
-                            email: payload.email,
-                            roles: userRoles
-                        }
-                    },
-                    process.env.ACCESS_TOKEN_SECRET,
-                    { expiresIn: '240s' }
-                );
-
-                res.json({ accessToken });
-            }
+    if (!email || !password) {
+        return next(
+            new ErrorResponse(`Please provide email and password.`, 400)
         );
-    } catch (error) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ err });
-        console.log(error);
     }
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+        return next(new ErrorResponse(`Invalid credentails.`, 401));
+    }
+
+    const match = user.comparePassword(password);
+
+    if (!match) return next(new ErrorResponse(`Invalid credentails.`, 401));
+
+    sendResponseToken(user, 200, res);
+});
+
+const logout = asyncHandler(async (req, res) => {
+    const user = await User.findOne(req.cookies.token).exec();
+    if (!user) {
+        res.clearCookie('token', {
+            httpOnly: true
+        });
+
+        res.sendStatus(201);
+    }
+
+    user.token = '';
+    await user.save();
+
+    res.clearCookie('token', { httpOnly: true });
+
+    res.status(200).json({ success: true });
+});
+
+// const refreshToken = asyncHandler(async (req, res) => {
+//     const user = await User.findOne(req.cookies.token);
+//     if (!user)
+//         return next(new ErrorResponse('Not authorized to access route', 401));
+
+//     jwt.verify(
+//         req.cookies.token,
+//         process.env.REFRESH_TOKEN_SECRET,
+//         (err, payload) => {
+//             if (err || payload.id !== user._id)
+//                 return next(
+//                     new ErrorResponse('FORBIDDEN to access route', 403)
+//                 );
+
+//             const token = jwt.sign(
+//                 {
+//                     id: payload.id
+//                 },
+//                 process.env.ACCESS_TOKEN_SECRET,
+//                 { expiresIn: '240s' }
+//             );
+
+//             res.json({ token });
+//         }
+//     );
+// });
+
+const sendResponseToken = (user, statusCode, res) => {
+    const token = user.generateAccessToken();
+
+    const options = {
+        expires: new Date(
+            Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+        ),
+        httpOnly: true
+    };
+
+    res.cookie('token', token, options);
+
+    res.status(statusCode).json({ success: true, token });
 };
 
 module.exports = {
-    handleLogin,
-    handleRegister,
-    handleLogout,
-    handleRefreshToken
+    login,
+    register,
+    logout
+    // refreshToken
 };
