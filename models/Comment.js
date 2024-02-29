@@ -2,12 +2,17 @@
 
 // const commentSchema = new mongoose.Schema({
 //     author: {
-//         type: mongoose.SchemaTypes.ObjectId,
-//         ref: 'User',
-//         require: true
+//         type: mongoose.Schema.Types.ObjectId,
+//         required: [true, 'Please provide comment author.']
 //     },
-//     text: String
+//     parentId: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         required: [true, 'Please provide parent id.']
+//     },
+//     content: {
+//         type: String,
+//         maxlength: [500, 'Content cannot exceed 500 characters.']
+//     }
 // });
 
-// const Comment = mongoose.model('Comment', commentSchema);
-// module.exports = Comment;
+// module.exports = mongoose.models('Comment', commentSchema);

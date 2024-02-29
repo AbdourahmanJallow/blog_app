@@ -31,6 +31,7 @@ const getBlog = asyncHandler(async (req, res, next) => {
 // @access          public
 const createBlog = asyncHandler(async (req, res, next) => {
     req.body.author = req.params.userId;
+    req.body.isBlog = true;
     const blog = await Blog.create(req.body);
 
     if (!blog) {
@@ -94,6 +95,39 @@ const deleteBlog = asyncHandler(async (req, res, next) => {
     await Blog.findByIdAndDelete(req.params.id);
 
     res.status(200).json({ success: true, data: {} });
+});
+
+// @description     Update a new blog
+// routes           POST api/v1/blogs/:id/comment
+// @access          public
+const addCommentToBlog = asyncHandler(async (req, res, next) => {
+    let blog = await Blog.findById(req.params.id);
+
+    // Make sure blog exists
+    if (!blog)
+        return next(
+            new ErrorResponse(`Blog with id ${req.params.id} not found.`, 404)
+        );
+
+    // Create comment
+    let comment = new Blog({
+        author: req.user._id,
+        content: req.body.content,
+        parentBlogId: blog._id
+    });
+
+    comment = await comment.save();
+
+    // Push comment to blog comments
+    blog = await Blog.findByIdAndUpdate(
+        req.params.id,
+        {
+            $push: { comments: comment }
+        },
+        { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ success: true, data: blog });
 });
 
 // @description     Upload blog image
@@ -165,5 +199,6 @@ module.exports = {
     deleteBlog,
     getAllBlogs,
     getBlog,
-    uploadBlogImage
+    uploadBlogImage,
+    addCommentToBlog
 };

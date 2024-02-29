@@ -15,7 +15,16 @@ const advancedResults = (model, populate) => async (req, res, next) => {
         (match) => `$${match}`
     );
 
-    query = model.find(JSON.parse(queryString));
+    // Add filter for blogs without a parentId
+    const parsedQuery = JSON.parse(queryString);
+    if (
+        model.modelName === 'Blog' &&
+        !parsedQuery.hasOwnProperty('parentBlogId')
+    ) {
+        parsedQuery.parentBlogId = { $in: [null, undefined] };
+    }
+
+    query = model.find(parsedQuery);
 
     // Check for  select query field
     if (req.query.select) {
@@ -42,6 +51,15 @@ const advancedResults = (model, populate) => async (req, res, next) => {
 
     if (populate) {
         query = query.populate(populate);
+    }
+
+    // populate blog with comments
+    if (model.modelName === 'Blog') {
+        query = query.populate({
+            path: 'comments',
+            ref: 'Comment',
+            select: 'content author featuredImage'
+        });
     }
 
     const results = await query;

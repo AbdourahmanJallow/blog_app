@@ -6,7 +6,7 @@ const ErrorResponse = require('../utils/errorHandler');
 // routes           GET api/v1/auth/me
 // @access          private
 const getMe = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).populate('blogs');
     res.status(200).json({ success: true, data: user });
 });
 

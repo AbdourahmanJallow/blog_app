@@ -6,7 +6,8 @@ const {
     deleteBlog,
     getAllBlogs,
     getBlog,
-    uploadBlogImage
+    uploadBlogImage,
+    addCommentToBlog
 } = require('../controllers/blogs');
 const { protect, authorize } = require('../middleware/auth');
 const advancedResults = require('../middleware/advancedResults');
@@ -17,13 +18,22 @@ const router = express.Router({ mergeParams: true });
 router
     .route('/')
     .get(
-        advancedResults(Blog, {
-            path: 'author',
-            select: 'name email'
-        }),
+        advancedResults(
+            Blog,
+            {
+                path: 'author',
+                select: 'name email'
+            },
+            {
+                parentBlogId: { $in: [null, undefined] }
+            }
+        ),
         getAllBlogs
     )
     .post(protect, createBlog);
+
+// Add comment route
+router.route('/:id/comment').post(protect, addCommentToBlog);
 
 router
     .route('/:id')

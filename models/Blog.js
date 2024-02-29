@@ -6,43 +6,56 @@ const { ObjectId } = mongoose.Schema.Types;
 const blogSchema = new Schema({
     title: {
         type: String,
-        required: [true, 'Please provide blog title.'],
+        required: [
+            function () {
+                return this.isBlog;
+            },
+            'Please provide a blog title.'
+        ],
         maxlength: [50, 'Title cannot exceed 50 characters.']
     },
     content: {
         type: String,
         required: [true, 'Please provide blog content.'],
-        maxlength: [500, 'Content cannot exceed 500 characters.']
+        maxlength: [1000, 'Content cannot exceed 1000 characters.']
     },
     author: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: ObjectId,
         ref: 'User',
         required: [true, 'Please provide blog author.']
     },
     category: {
         type: [String],
-        required: [true, 'Please provide blog categorie(s).'],
+        required: [
+            function () {
+                return this.isBlog;
+            },
+            'Please provide blog categorie(s).'
+        ],
         enum: [
-            'Technology',
-            'Lifestyle',
-            'Food & Cooking',
-            'Business & Entrepreneurship',
-            'Travel',
-            'Health & Fitness',
-            'Education',
-            'Fashion'
+            'technology',
+            'coding',
+            'food',
+            'business',
+            'travel',
+            'health & fitness',
+            'education',
+            'fashion'
         ]
     },
     slug: String,
     featuredImage: {
         type: String,
-        default: 'no-featured-image.jpg'
+        default: 'no-featuredImage.jpg'
     },
-    // comments: {
-    //     type: [mongoose.SchemaTypes.ObjectId],
-    //     ref: 'Blog'
-    // },
+    parentBlogId: ObjectId,
+    comments: [{ type: ObjectId, ref: 'Blog' }],
     tags: [String],
+    isBlog: {
+        type: Boolean,
+        default: false,
+        select: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -52,8 +65,9 @@ const blogSchema = new Schema({
 
 // Save slug information
 blogSchema.pre('save', function (next) {
-    this.slug = slugify(this.title, { lower: true });
+    this.isBlog ? (this.slug = slugify(this.title, { lower: true })) : next();
 
     next();
 });
+
 module.exports = mongoose.model('Blog', blogSchema);

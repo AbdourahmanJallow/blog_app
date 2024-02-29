@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { default: slugify } = require('slugify');
 
 const Schema = mongoose.Schema;
 
@@ -20,6 +21,7 @@ const userSchema = Schema(
             ],
             unique: true
         },
+        username: String,
         password: {
             type: String,
             required: [true, 'Please provide a password'],
@@ -45,6 +47,9 @@ const userSchema = Schema(
 );
 
 userSchema.pre('save', async function () {
+    // add username
+    // this.slug = slugify(this.name, { lower: true });
+
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
 });
