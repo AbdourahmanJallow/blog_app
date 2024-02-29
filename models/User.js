@@ -26,6 +26,10 @@ const userSchema = Schema(
             minlength: 6,
             select: false
         },
+        blogs: {
+            type: [Schema.Types.ObjectId],
+            ref: 'Blog'
+        },
         role: {
             type: String,
             enum: ['user', 'publisher'],
@@ -33,6 +37,10 @@ const userSchema = Schema(
         },
         token: String
     },
+    // {
+    //     toJSON: { virtuals: true },
+    //     toObject: { virtuals: true }
+    // },
     { timestamps: true }
 );
 
@@ -55,5 +63,13 @@ userSchema.methods.comparePassword = async function (password) {
     const matchedUser = await bcrypt.compare(password, this.password); // compare passwords
     return matchedUser;
 };
+
+// Reverse populate the blogs
+// userSchema.virtual('blogs', {
+//     ref: 'Blog',
+//     localField: '_id',
+//     foreignField: 'author',
+//     justOne: 'false'
+// });
 
 module.exports = mongoose.model('User', userSchema);

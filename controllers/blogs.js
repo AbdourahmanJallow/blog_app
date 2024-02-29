@@ -2,6 +2,7 @@ const Blog = require('../models/Blog');
 const asyncHandler = require('../middleware/async');
 const ErrorResponse = require('../utils/errorHandler');
 const path = require('path');
+const User = require('../models/User');
 
 // @description     Get all blogs
 // routes           GET api/v1/blogs
@@ -26,15 +27,20 @@ const getBlog = asyncHandler(async (req, res, next) => {
 });
 
 // @description     Create a new blog
-// routes           POST api/v1/blogs
+// routes           POST api/v1/auth/users/:userId/blogs
 // @access          public
 const createBlog = asyncHandler(async (req, res, next) => {
-    req.body.author = req.user._id;
+    req.body.author = req.params.userId;
     const blog = await Blog.create(req.body);
 
     if (!blog) {
         return next(new ErrorResponse(`Failed to create new blog.`, 400));
     }
+
+    // Update this user's blogs
+    await User.findByIdAndUpdate(req.params.userId, {
+        $push: { blogs: blog._id }
+    });
 
     res.status(201).json({ success: true, data: blog });
 });
@@ -126,14 +132,14 @@ const uploadBlogImage = asyncHandler(async (req, res, next) => {
     if (file.size > process.env.MAX_FILE_UPLOAD) {
         return next(
             new ErrorResponse(
-                `Image size is greater than max size: ${process.env.MAX_FILE_UPLOAD}`,
+                `Image size is greater than max size: ${process.env.MAX_FILE_UPLOAD} bytes (1 MB)`,
                 400
             )
         );
     }
 
     // add custome photo name
-    file.name = `photo_${req.params.id}${path.parse(file.name).ext}`;
+    file.name = `blog_photo_${req.params.id}${path.parse(file.name).ext}`;
 
     file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
         if (err) {
