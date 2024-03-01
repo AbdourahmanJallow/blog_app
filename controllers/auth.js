@@ -79,6 +79,13 @@ const updateUser = asyncHandler(async (req, res, next) => {
     res.status(200).json({ success: true, user });
 });
 
+// @description     Upload Profile Photo
+// routes           PUT api/v1/auth/uploadprofilephoto
+// @access          private
+const uploadProfilePhoto = asyncHandler(async (req, res, next) => {
+    res.status(200).json(res.uploadPhoto);
+});
+
 // @description     Forgot Password
 // routes           POST api/v1/auth/forgotpassword
 // @access          public
@@ -174,6 +181,7 @@ module.exports = {
     logout,
     getMe,
     updateUser,
+    uploadProfilePhoto,
     forgotPassword,
     resetPassword
     // refreshToken

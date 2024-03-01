@@ -32,6 +32,7 @@ const UserSchema = new mongoose.Schema({
         enum: ['user', 'publisher'],
         default: 'user'
     },
+    profilePhoto: String,
     // accessToken: String,
     resetPasswordToken: String,
     resetPasswordExpire: Date,

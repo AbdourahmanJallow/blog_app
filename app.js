@@ -51,9 +51,9 @@ mongoose.connection.once('open', () => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (err, promise) => {
-    console.log(`Error: ${err.message}`.red);
+// process.on('unhandledRejection', (err, promise) => {
+//     console.log(`Error: ${err.message}`.red);
 
-    // close server & exit process
-    server.close(() => process.exit(1));
-});
+//     // close server & exit process
+//     server.close(() => process.exit(1));
+// });

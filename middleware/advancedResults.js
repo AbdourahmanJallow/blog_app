@@ -45,7 +45,12 @@ const advancedResults = (model, populate) => async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 10;
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
-    const total = await model.countDocuments();
+    //if blog, count top-level blogs
+    const total = await model.countDocuments(
+        model.modelName === 'Blog' && {
+            parentBlogId: { $in: [null, undefined] }
+        }
+    );
 
     query = query.skip(startIndex).limit(limit);
 
