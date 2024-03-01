@@ -53,19 +53,10 @@ const login = asyncHandler(async (req, res, next) => {
 // routes           GET api/v1/auth/logout
 // @access          private
 const logout = asyncHandler(async (req, res, next) => {
-    const user = await User.findOne(req.cookies.token).exec();
-    if (!user) {
-        res.clearCookie('token', {
-            httpOnly: true
-        });
-
-        res.sendStatus(201);
-    }
-
-    user.token = '';
-    await user.save();
-
-    res.clearCookie('token', { httpOnly: true });
+    res.cookie('token', 'none', {
+        expires: new Date(Date.now() + 10 * 1000),
+        httpOnly: true
+    });
 
     res.status(200).json({ success: true });
 });
@@ -115,8 +106,6 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
     const message = `You are receiving this email because you (or someone else) has requested to reset password. Please make a PUT request to: \n\n ${resetUrl}`;
 
     try {
-        //
-
         await sendEmail({
             email: user?.email,
             message,

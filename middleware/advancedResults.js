@@ -58,7 +58,12 @@ const advancedResults = (model, populate) => async (req, res, next) => {
         query = query.populate({
             path: 'comments',
             ref: 'Comment',
-            select: 'content author featuredImage'
+            select: 'content author featuredImage',
+            populate: {
+                //populate this comment's comments :)
+                path: 'comments',
+                select: 'content author'
+            }
         });
     }
 

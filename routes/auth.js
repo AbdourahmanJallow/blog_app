@@ -3,16 +3,17 @@ const router = express.Router();
 const {
     register,
     login,
-    logout,
     getMe,
     updateUser,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    logout
 } = require('../controllers/auth');
 const { protect } = require('../middleware/auth');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/logout', logout);
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resetToken', resetPassword);
 router.get('/me', protect, getMe);

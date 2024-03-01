@@ -21,7 +21,7 @@ mongoose.connect(process.env.MONGODB_URI);
 // Add data to database
 const addData = async () => {
     try {
-        await User.create(users);
+        // await User.create(users);
         // await Blog.create(blogs);
 
         console.log('Data Imported'.green.inverse);
@@ -34,8 +34,8 @@ const addData = async () => {
 // Delete data to database
 const deleteData = async () => {
     try {
-        await User.deleteMany();
-        await Blog.deleteMany();
+        // await User.deleteMany();
+        // await Blog.deleteMany();
 
         console.log('Data Destroyed'.red.inverse);
         process.exit();
