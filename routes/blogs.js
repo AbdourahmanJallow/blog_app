@@ -18,16 +18,10 @@ const router = express.Router({ mergeParams: true });
 router
     .route('/')
     .get(
-        advancedResults(
-            Blog,
-            {
-                path: 'author',
-                select: 'name email'
-            },
-            {
-                parentBlogId: { $in: [null, undefined] }
-            }
-        ),
+        advancedResults(Blog, {
+            path: 'author',
+            select: 'name email'
+        }),
         getAllBlogs
     )
     .post(protect, createBlog);

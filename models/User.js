@@ -1,80 +1,93 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { default: slugify } = require('slugify');
+const crypto = require('crypto');
 
-const Schema = mongoose.Schema;
-
-const userSchema = Schema(
-    {
-        name: {
-            type: String,
-            required: [true, 'Please provide a name.'],
-            minlength: 3
-        },
-        email: {
-            type: String,
-            required: [true, 'Please provide email.'],
-            match: [
-                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-                'Please provide a valid email'
-            ],
-            unique: true
-        },
-        username: String,
-        password: {
-            type: String,
-            required: [true, 'Please provide a password'],
-            minlength: 6,
-            select: false
-        },
-        blogs: {
-            type: [Schema.Types.ObjectId],
-            ref: 'Blog'
-        },
-        role: {
-            type: String,
-            enum: ['user', 'publisher'],
-            default: 'user'
-        },
-        token: String
+const UserSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: [true, 'Please add a name.']
     },
-    // {
-    //     toJSON: { virtuals: true },
-    //     toObject: { virtuals: true }
-    // },
-    { timestamps: true }
-);
+    email: {
+        type: String,
+        required: [true, 'Please add an email.'],
+        unique: true,
+        match: [
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+            'Please add a valid email address'
+        ]
+    },
+    password: {
+        type: String,
+        required: [true, 'Please add a password'],
+        minlength: 6,
+        select: false
+    },
+    blogs: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'Blog'
+    },
+    role: {
+        type: String,
+        enum: ['user', 'publisher'],
+        default: 'user'
+    },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
 
-userSchema.pre('save', async function () {
-    // add username
-    // this.slug = slugify(this.name, { lower: true });
+// Encryptpassword
+UserSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        next();
+    }
 
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+
+    next();
 });
 
-userSchema.methods.generateAccessToken = function () {
-    return jwt.sign(
-        {
-            id: this._id
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: process.env.ACCESS_TOKEN_EXPIRE }
-    );
+// Sign JWT and return
+UserSchema.methods.generateAccessToken = function () {
+    return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRE
+    });
 };
 
-userSchema.methods.comparePassword = async function (password) {
-    const matchedUser = await bcrypt.compare(password, this.password); // compare passwords
-    return matchedUser;
+// Compare user password to entererd password
+UserSchema.methods.comparePassword = async function (pwd) {
+    const isMatch = await bcrypt.compare(pwd, this.password);
+    return isMatch;
 };
 
-// Reverse populate the blogs
-// userSchema.virtual('blogs', {
-//     ref: 'Blog',
-//     localField: '_id',
-//     foreignField: 'author',
-//     justOne: 'false'
-// });
+// Generate and hash reset password token
+UserSchema.methods.generateResetPasswordToken = function () {
+    // Generate token
+    const token = crypto.randomBytes(20).toString('hex');
 
-module.exports = mongoose.model('User', userSchema);
+    // Hash token and reset password token
+    this.resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+    // Set expiration
+    this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+
+    return token;
+};
+
+// // Reverse populate the blogs
+// // userSchema.virtual('blogs', {
+// //     ref: 'Blog',
+// //     localField: '_id',
+// //     foreignField: 'author',
+// //     justOne: 'false'
+// // });
+
+module.exports = mongoose.model('User', UserSchema);

@@ -15,7 +15,7 @@ const advancedResults = (model, populate) => async (req, res, next) => {
         (match) => `$${match}`
     );
 
-    // Add filter for blogs without a parentId
+    // Query for top-level blogs, blogs without parentId
     const parsedQuery = JSON.parse(queryString);
     if (
         model.modelName === 'Blog' &&

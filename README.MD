@@ -33,3 +33,4 @@
     - register user, login and logout
     - return token after register and login to access private routes
     - Only loggedIn users can create and manage blogs
+    - Users can add comments to blog posts

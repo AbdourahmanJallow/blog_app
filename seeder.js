@@ -22,7 +22,7 @@ mongoose.connect(process.env.MONGODB_URI);
 const addData = async () => {
     try {
         await User.create(users);
-        await Blog.create(blogs);
+        // await Blog.create(blogs);
 
         console.log('Data Imported'.green.inverse);
         process.exit();
