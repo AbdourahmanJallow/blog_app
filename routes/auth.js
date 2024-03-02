@@ -22,7 +22,11 @@ router.put('/resetpassword/:resetToken', resetPassword);
 
 router.use(protect);
 router.get('/me', getMe);
-router.put('/uploadprofilephoto', uploadPhoto(User), uploadProfilePhoto);
+router.put(
+    '/uploadprofilephoto',
+    uploadPhoto(User, 'User', 'profilePhoto'),
+    uploadProfilePhoto
+);
 router.put('/updatedetails', updateUser);
 
 module.exports = router;

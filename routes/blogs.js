@@ -12,6 +12,7 @@ const {
 const { protect, authorize } = require('../middleware/auth');
 const advancedResults = require('../middleware/advancedResults');
 const Blog = require('../models/Blog');
+const uploadPhoto = require('../middleware/uploadPhoto');
 
 const router = express.Router({ mergeParams: true });
 
@@ -38,5 +39,10 @@ router
 // Upload blog image
 router
     .route('/:id/photo')
-    .put(protect, authorize('admin', 'user'), uploadBlogImage);
+    .put(
+        protect,
+        authorize('admin', 'user'),
+        uploadPhoto(Blog, 'Blog', 'featuredImage'),
+        uploadBlogImage
+    );
 module.exports = router;
