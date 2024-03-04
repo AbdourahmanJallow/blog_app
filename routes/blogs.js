@@ -7,7 +7,9 @@ const {
     getAllBlogs,
     getBlog,
     uploadBlogImage,
-    addCommentToBlog
+    addCommentToBlog,
+    likeBlog,
+    unlikeBlog
 } = require('../controllers/blogs');
 const { protect, authorize } = require('../middleware/auth');
 const advancedResults = require('../middleware/advancedResults');
@@ -27,20 +29,25 @@ router
     )
     .post(protect, createBlog);
 
+router.use(protect);
+
 // Add comment route
-router.route('/:id/comment').post(protect, addCommentToBlog);
+router.route('/:id/comment').post(addCommentToBlog);
+
+// Like and unlike a blog
+router.route('/:id/like').put(likeBlog);
+router.route('/:id/unlike').put(unlikeBlog);
 
 router
     .route('/:id')
     .get(getBlog)
-    .put(protect, authorize('admin', 'user'), updateBlog)
-    .delete(protect, authorize('admin', 'user'), deleteBlog);
+    .put(authorize('admin', 'user'), updateBlog)
+    .delete(authorize('admin', 'user'), deleteBlog);
 
 // Upload blog image
 router
     .route('/:id/photo')
     .put(
-        protect,
         authorize('admin', 'user'),
         uploadPhoto(Blog, 'Blog', 'featuredImage'),
         uploadBlogImage

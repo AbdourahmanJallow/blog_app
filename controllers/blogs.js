@@ -139,6 +139,81 @@ const uploadBlogImage = asyncHandler(async (req, res, next) => {
     res.status(200).json(res.uploadPhoto);
 });
 
+// @description     Like A Blog
+// routes           POST api/v1/blogs/:id/like
+// @access          public
+const likeBlog = asyncHandler(async (req, res, next) => {
+    // fetch blog
+    let blog = await Blog.findById(req.params.id);
+
+    if (!blog) {
+        return next(
+            new ErrorResponse(`Blog with id ${req.params.id} not found`, 404)
+        );
+    }
+
+    if (blog.likes.includes(req.user._id)) {
+        return res.status(200).json({
+            success: false,
+            data: 'You have already liked this blog.'
+        });
+    }
+
+    blog = await Blog.findByIdAndUpdate(
+        req.params.id,
+        {
+            $push: { likes: req.user._id }
+        },
+        { new: true, runValidators: true }
+    )
+        .select('title author')
+        .populate({ path: 'likes', select: 'name' });
+
+    // blog.likes.push(req.user._id);
+    // blog = await blog.save();
+    res.status(200).json({ success: true, data: blog });
+});
+
+// @description     Unlike A Blog
+// routes           POST api/v1/blogs/:id/unlike
+// @access          public
+const unlikeBlog = asyncHandler(async (req, res, next) => {
+    // fetch blog
+    let blog = await Blog.findById(req.params.id);
+
+    if (!blog) {
+        return next(
+            new ErrorResponse(`Blog with id ${req.params.id} not found`, 404)
+        );
+    }
+
+    if (!blog.likes.includes(req.user._id)) {
+        return res.status(200).json({
+            success: false,
+            data: 'You have not liked this blog.'
+        });
+    }
+
+    blog = await Blog.findByIdAndUpdate(
+        req.params.id,
+        {
+            $pull: { likes: req.user._id }
+        },
+        { new: true, runValidators: true }
+    )
+        .select('title author')
+        .populate({ path: 'likes', select: 'name' });
+
+    // const newLikes = blog.likes.filter((user) => user._id !== req.user._id);
+    // blog.likes = newLikes;
+    // blog = await blog.save();
+
+    // blog.likes.push(req.user._id);
+    // blog = await blog.save();
+    res.status(200).json({ success: true, data: blog });
+    res.status(200).json();
+});
+
 module.exports = {
     createBlog,
     updateBlog,
@@ -146,5 +221,7 @@ module.exports = {
     getAllBlogs,
     getBlog,
     uploadBlogImage,
-    addCommentToBlog
+    addCommentToBlog,
+    likeBlog,
+    unlikeBlog
 };

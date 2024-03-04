@@ -51,6 +51,8 @@ const blogSchema = new Schema({
     parentBlogId: ObjectId,
     comments: [{ type: ObjectId, ref: 'Blog' }],
     tags: [String],
+    likes: [{ type: ObjectId, ref: 'User' }],
+    dislikes: [{ type: ObjectId, ref: 'User' }],
     isBlog: {
         type: Boolean,
         default: false,
