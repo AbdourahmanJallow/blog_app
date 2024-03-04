@@ -8,8 +8,10 @@ const {
     getBlog,
     uploadBlogImage,
     addCommentToBlog,
-    likeBlog,
-    unlikeBlog
+    addLike,
+    removeLike,
+    addDislike,
+    removeDislike
 } = require('../controllers/blogs');
 const { protect, authorize } = require('../middleware/auth');
 const advancedResults = require('../middleware/advancedResults');
@@ -34,9 +36,12 @@ router.use(protect);
 // Add comment route
 router.route('/:id/comment').post(addCommentToBlog);
 
-// Like and unlike a blog
-router.route('/:id/like').put(likeBlog);
-router.route('/:id/unlike').put(unlikeBlog);
+// Like blog
+router.route('/:id/like').put(addLike);
+router.route('/:id/removelike').put(removeLike);
+// Dislike blog
+router.route('/:id/dislike').put(addDislike);
+router.route('/:id/removedislike').put(removeDislike);
 
 router
     .route('/:id')
